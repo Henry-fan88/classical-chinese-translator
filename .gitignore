@@ -1,0 +1,24 @@
+# Python 虚拟环境与缓存
+venv/
+__pycache__/
+*.pyc
+
+# 运行时生成的数据/日志/产物
+data/
+logs/
+output/
+
+# 书籍源文件与产物（版权内容，勿入库）
+*.epub
+*.pdf
+*.txt
+
+# 密钥与本地环境（绝不入库）
+.env
+*.key
+secrets*
+
+# 系统/编辑器杂项
+.DS_Store
+.vscode/
+.idea/
