@@ -8,18 +8,43 @@
   verse   -> verse 环境（保留分行）
 
 用法：
-  python build_latex.py              # 仅译文（简体白话）
-  python build_latex.py --bilingual  # 原文 + 译文对照（便于校对）
+  python build_latex.py              # 仅译文（简体白话）-> output/zongjinglu.tex
+  python build_latex.py --bilingual  # 原文/译文对照     -> output/zongjinglu_bilingual.tex
+
+字号：默认 14pt。基于 extbook 类（支持大字号）+ ctex 宏包。用环境变量覆盖：
+  TR_FONT_PT=17 python build_latex.py --bilingual
+extbook 可选字号：10 / 11 / 12 / 14 / 17 / 20 (pt)。需要 extsizes 宏包
+（TinyTeX 用户：tlmgr install extsizes）。
 """
+import os
 import sys
 
 import config
 import store
 
-PREAMBLE = r"""\documentclass[UTF8,fontset=mac,a4paper,12pt,openany]{ctexbook}
+# 全局基础字号（pt），可用环境变量覆盖。默认 14pt（比原 12pt 大一档）。
+FONT_PT = os.environ.get("TR_FONT_PT", "14")
+
+
+def preamble(bilingual: bool) -> str:
+    subtitle = "原文／白话对照本" if bilingual else "简体白话译本"
+    # 对照模式额外定义：原文用灰色，译文用黑色，成对排版便于对读。
+    bil_macros = r"""
+\definecolor{srccolor}{gray}{0.40}
+% 对照：原文（灰）紧跟译文（黑），段尾留白把每一对隔开
+\newcommand{\srcpar}[1]{{\par\color{srccolor}#1\par}}
+\newcommand{\trpar}[1]{{\par #1\par}}
+\newcommand{\bilgap}{\vspace{0.5em}}
+""" if bilingual else ""
+    # extbook 提供 14/17/20pt 等大字号，再用 ctex 宏包加中文支持（heading=true
+    # 复现 ctexbook 的「第 N 章」中文章节样式并启用 \ctexset 章节键）。
+    return (
+        r"\documentclass[a4paper," + FONT_PT + r"pt,openany]{extbook}"
+        + r"""
+\usepackage[UTF8,fontset=mac,heading=true]{ctex}
 \usepackage{geometry}
 \geometry{margin=2.5cm}
-\usepackage{xeCJK}
+\usepackage{xcolor}
 \usepackage{verse}
 \linespread{1.35}
 \setlength{\parskip}{0.4em}
@@ -29,27 +54,39 @@ PREAMBLE = r"""\documentclass[UTF8,fontset=mac,a4paper,12pt,openany]{ctexbook}
 }
 % 署名：右对齐小字
 \newcommand{\byline}[1]{{\par\raggedleft\small\itshape #1\par}}
-% 原文小字（对照模式用）
-\newcommand{\orig}[1]{{\par\small\color{gray} 原文：#1\par}}
-\usepackage{xcolor}
-\title{宗镜录\\[6pt]\large 简体白话译本}
+"""
+        + bil_macros
+        + r"\title{宗镜录\\[6pt]\large " + subtitle + r"}"
+        + r"""
 \author{〔五代〕永明延寿 集\\ DeepSeek 机器翻译}
 \date{}
 """
+    )
 
-FRONT = r"""\begin{document}
+
+def front(bilingual: bool) -> str:
+    convention = (
+        r"\vspace{1em}本对照本：\textcolor{srccolor}{灰色为原文（繁体）}，黑色为白话译文。\\"
+        if bilingual else ""
+    )
+    return (
+        r"""\begin{document}
 \maketitle
 \thispagestyle{empty}
 \vspace*{2cm}
 \begin{center}\small
 本电子书原文出自 CBETA 电子佛典《大正藏》 T48 No.2016《宗镜录》（公有领域）。\\
 白话译文为 DeepSeek 模型自动翻译，仅供阅读参考，未经人工校订，\\
-义理以原典为准。
+义理以原典为准。"""
+        + convention
+        + r"""
 \end{center}
 \clearpage
 \tableofcontents
 \clearpage
 """
+    )
+
 
 _SPECIAL = {
     "\\": r"\textbackslash{}", "&": r"\&", "%": r"\%", "$": r"\$",
@@ -65,8 +102,18 @@ def esc(s: str) -> str:
     return "".join(out)
 
 
+def verse_env(text: str, color_cmd: str = "") -> str:
+    lines = [esc(l) for l in text.split("\n") if l.strip()]
+    inner = " \\\\\n".join(lines)
+    if color_cmd:
+        inner = "{" + color_cmd + " " + inner + "}"
+    return "\\begin{verse}\n" + inner + "\n\\end{verse}\n"
+
+
 def main():
     bilingual = "--bilingual" in sys.argv
+    out_path = (config.OUT_DIR / "zongjinglu_bilingual.tex") if bilingual else config.TEX_PATH
+
     conn = store.connect(readonly=True)
     rows = conn.execute(
         "SELECT juan_no,kind,level,source,translated,status FROM segments ORDER BY seq"
@@ -103,25 +150,30 @@ def main():
         elif kind == "byline":
             body.append(f"\\byline{{{esc(text)}}}\n")
         elif kind == "verse":
-            lines = [esc(l) for l in text.split("\n") if l.strip()]
-            body.append("\\begin{verse}\n" + " \\\\\n".join(lines) + "\n\\end{verse}\n")
             if bilingual:
-                body.append(f"\\orig{{{esc(r['source'])}}}\n")
+                body.append(verse_env(r["source"], r"\color{srccolor}"))
+                body.append(verse_env(text))
+                body.append("\\bilgap\n")
+            else:
+                body.append(verse_env(text))
         else:  # para
-            body.append(esc(text) + "\n")
             if bilingual:
-                body.append(f"\\orig{{{esc(r['source'])}}}\n")
+                body.append(f"\\srcpar{{{esc(r['source'])}}}\n")
+                body.append(f"\\trpar{{{esc(text)}}}\n")
+                body.append("\\bilgap\n")
+            else:
+                body.append(esc(text) + "\n")
 
-    tex = PREAMBLE + FRONT + "\n".join(body) + "\n\\end{document}\n"
+    tex = preamble(bilingual) + front(bilingual) + "\n".join(body) + "\n\\end{document}\n"
     config.OUT_DIR.mkdir(parents=True, exist_ok=True)
-    config.TEX_PATH.write_text(tex, encoding="utf-8")
+    out_path.write_text(tex, encoding="utf-8")
 
-    print(f"已生成 LaTeX: {config.TEX_PATH}")
+    print(f"已生成 LaTeX: {out_path}")
     print(f"  段落 {len(rows)}，其中未翻译 {missing}（未译段落会暂时填入原文）。")
     if missing:
         print("  提示：翻译尚未全部完成，可等完成后再重建以获得纯白话版。")
-    print(f"  模式: {'原文/译文对照' if bilingual else '仅白话译文'}")
-    print("\n下一步编译 PDF:  bash build_pdf.sh")
+    print(f"  模式: {'原文/译文对照' if bilingual else '仅白话译文'}，基础字号 {FONT_PT}pt")
+    print(f"\n下一步编译 PDF:  bash build_pdf.sh {out_path.stem}")
 
 
 if __name__ == "__main__":

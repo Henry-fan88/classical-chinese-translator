@@ -72,10 +72,19 @@ cd translator
 ### 5. 全部译完后，生成 PDF
 ```bash
 bash setup_tex.sh      # 仅第一次：装 TinyTeX + 中文宏包（约几分钟，联网）
-./venv/bin/python build_latex.py      # 或加 --bilingual 出原文/译文对照版
-bash build_pdf.sh                      # 产出 output/your_book.pdf
+
+# 纯白话版
+./venv/bin/python build_latex.py             # -> output/zongjinglu.tex
+bash build_pdf.sh                             # -> output/zongjinglu.pdf
+
+# 原文/译文对照版（灰色原文 + 黑色白话，独立文件，不覆盖纯白话版）
+./venv/bin/python build_latex.py --bilingual # -> output/zongjinglu_bilingual.tex
+bash build_pdf.sh zongjinglu_bilingual       # -> output/zongjinglu_bilingual.pdf
 ```
-> 不想装 LaTeX？把 `output/your_book.tex` 上传到 https://www.overleaf.com 直接编译即可（零安装，自带 ctex）。
+> **字号**：默认 14pt（基于 `extbook` 类，需 `tlmgr install extsizes`）。想更大/更小，
+> 用环境变量覆盖再重跑 `build_latex.py`，可选 10/11/12/14/17/20pt：
+> `TR_FONT_PT=17 ./venv/bin/python build_latex.py --bilingual`
+> 不想装 LaTeX？把生成的 `.tex` 上传到 https://www.overleaf.com 直接编译即可（零安装，自带 ctex + extsizes）。
 
 ---
 
