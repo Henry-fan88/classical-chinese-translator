@@ -9,11 +9,11 @@ ROOT = Path(__file__).resolve().parent              # translator/
 PROJECT = ROOT.parent                               # wechat_book/
 
 # ---- 路径 ----
-EPUB_PATH = Path(os.environ.get("EPUB_PATH", PROJECT / "宗镜录_T2016.epub"))
+EPUB_PATH = Path(os.environ.get("EPUB_PATH", ROOT / "万善同归集_T2017.epub"))
 DB_PATH   = ROOT / "data" / "state.db"
 OUT_DIR   = ROOT / "output"
 LOG_DIR   = ROOT / "logs"
-TEX_PATH  = OUT_DIR / "zongjinglu.tex"
+TEX_PATH  = OUT_DIR / "wanshantonggui.tex"
 
 # ---- DeepSeek API ----
 API_KEY_ENV = "DEEPSEEK_API_KEY"

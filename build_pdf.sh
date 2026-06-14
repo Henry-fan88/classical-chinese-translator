@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 # 阶段四：用 XeLaTeX 把 output/<name>.tex 编译成 PDF。
 # 中文需要 xelatex + ctex；若未安装，先跑 setup_tex.sh。
-#   bash build_pdf.sh                       # 编译 zongjinglu.tex（纯白话）
-#   bash build_pdf.sh zongjinglu_bilingual  # 编译对照版
+#   bash build_pdf.sh                          # 编译 wanshantonggui.tex（纯白话）
+#   bash build_pdf.sh wanshantonggui_bilingual # 编译对照版
 set -e
 cd "$(dirname "$0")/output"
 
-NAME="${1:-zongjinglu}"
+NAME="${1:-wanshantonggui}"
 NAME="${NAME%.tex}"   # 容忍带 .tex 后缀的参数
 
 if [ ! -f "$NAME.tex" ]; then

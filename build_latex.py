@@ -8,8 +8,8 @@
   verse   -> verse 环境（保留分行）
 
 用法：
-  python build_latex.py              # 仅译文（简体白话）-> output/zongjinglu.tex
-  python build_latex.py --bilingual  # 原文/译文对照     -> output/zongjinglu_bilingual.tex
+  python build_latex.py              # 仅译文（简体白话）-> output/wanshantonggui.tex
+  python build_latex.py --bilingual  # 原文/译文对照     -> output/wanshantonggui_bilingual.tex
 
 字号：默认 14pt。基于 extbook 类（支持大字号）+ ctex 宏包。用环境变量覆盖：
   TR_FONT_PT=17 python build_latex.py --bilingual
@@ -56,9 +56,9 @@ def preamble(bilingual: bool) -> str:
 \newcommand{\byline}[1]{{\par\raggedleft\small\itshape #1\par}}
 """
         + bil_macros
-        + r"\title{宗镜录\\[6pt]\large " + subtitle + r"}"
+        + r"\title{万善同归集\\[6pt]\large " + subtitle + r"}"
         + r"""
-\author{〔五代〕永明延寿 集\\ DeepSeek 机器翻译}
+\author{〔宋〕永明延寿 述\\ DeepSeek 机器翻译}
 \date{}
 """
     )
@@ -75,7 +75,7 @@ def front(bilingual: bool) -> str:
 \thispagestyle{empty}
 \vspace*{2cm}
 \begin{center}\small
-本电子书原文出自 CBETA 电子佛典《大正藏》 T48 No.2016《宗镜录》（公有领域）。\\
+本电子书原文出自 CBETA 电子佛典《大正藏》 T48 No.2017《万善同归集》（公有领域）。\\
 白话译文为 DeepSeek 模型自动翻译，仅供阅读参考，未经人工校订，\\
 义理以原典为准。"""
         + convention
@@ -112,7 +112,7 @@ def verse_env(text: str, color_cmd: str = "") -> str:
 
 def main():
     bilingual = "--bilingual" in sys.argv
-    out_path = (config.OUT_DIR / "zongjinglu_bilingual.tex") if bilingual else config.TEX_PATH
+    out_path = (config.OUT_DIR / "wanshantonggui_bilingual.tex") if bilingual else config.TEX_PATH
 
     conn = store.connect(readonly=True)
     rows = conn.execute(
